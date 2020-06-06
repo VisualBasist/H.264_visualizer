@@ -212,6 +212,55 @@ static void draw_arrow(uint8_t *buf, int sx, int sy, int ex,
     draw_line(buf, sx, sy, ex, ey, w, h, stride, color);
 }
 
+/**
+ * Draw an rectangle at (sx, sy) size (width, height)
+ * @param w width of the image
+ * @param h height of the image
+ * @param stride stride/linesize of the image
+ * @param color color of the rectangle
+ */
+static void draw_rectangle(uint8_t **buf, int sx, int sy, int width, int height ,
+                        int w, int h, int *stride, uint8_t color_y, uint8_t color_u, uint8_t color_v, int fill)
+{
+    if (sx + width > w){
+        width = w - sx;
+    }
+    if (sy + height > h){
+        height = h - sy;
+    }
+
+    if(fill){
+        for (size_t y = sy; y < sy + height; y++)
+        {
+            for (size_t x = sx; x < sx + width; x++)
+            {
+                buf[0][y * stride[0] + x] = color_y;
+                buf[1][y / 2 * stride[1] + x / 2] = color_u;
+                buf[2][y / 2 * stride[2] + x / 2] = color_v;
+            }
+        }
+    }else{
+        for (size_t y = sy; y < sy + height; y++)
+        {
+            buf[0][y * stride[0] + sx] = color_y;
+            buf[1][y / 2 * stride[1] + sx / 2] = color_u;
+            buf[2][y / 2 * stride[2] + sx / 2] = color_v;
+            buf[0][y * stride[0] + sx + width - 1] = color_y;
+            buf[1][y / 2 * stride[1] + (sx + width - 1) / 2] = color_u;
+            buf[2][y / 2 * stride[2] + (sx + width - 1) / 2] = color_v;
+        }
+        for (size_t x = sx; x < sx + width; x++)
+        {
+            buf[0][sy * stride[0] + x] = color_y;
+            buf[1][sy / 2 * stride[1] + x / 2] = color_u;
+            buf[2][sy / 2 * stride[2] + x / 2] = color_v;
+            buf[0][(sy + height - 1) * stride[0] + x] = color_y;
+            buf[1][(sy + height - 1) / 2 * stride[1] + x / 2] = color_u;
+            buf[2][(sy + height - 1) / 2 * stride[2] + x / 2] = color_v;
+        }
+    }
+}
+
 static int filter_frame(AVFilterLink *inlink, AVFrame *frame)
 {
     AVFilterContext *ctx = inlink->dst;
