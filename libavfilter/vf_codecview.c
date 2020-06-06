@@ -326,6 +326,53 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *frame)
         }
     }
 
+    {
+        AVFrameSideData *sd = av_frame_get_side_data(frame, AV_FRAME_DATA_MOTION_VECTORS);
+        if (sd) {
+            const AVMotionVector *mvs = (const AVMotionVector *)sd->data;
+            for (int i = 0; i < sd->size / sizeof(*mvs); i++) {
+                const AVMotionVector *mv = &mvs[i];
+                draw_rectangle(frame->data, mv->dst_x - mv->w / 2, mv->dst_y - mv->h / 2, mv->w, mv->h, 
+                    frame->width, frame->height, frame->linesize, 128, 255, 0, 0);
+            }
+        }
+    }
+
+    {
+        AVFrameSideData *sd = av_frame_get_side_data(frame, AV_FRAME_DATA_MACRO_BLOCK_TYPES);
+        if (sd) {
+            const mb_stride = frame->width / 16 + 1;
+            for (size_t mb_y = 0; mb_y < frame->height / 16 ; mb_y++)
+            {
+                for (size_t mb_x = 0; mb_x < frame->width / 16 ; mb_x++)
+                {
+                    const mb_type = ((uint32_t*)(sd->data))[mb_x + mb_y * mb_stride];
+                    if(mb_type & 1){
+                        // intra 4x4
+                        for (size_t submb_y = 0; submb_y < 2; submb_y++)
+                        {
+                            for (size_t submb_x = 0; submb_x < 2; submb_x++)
+                            {
+                                draw_rectangle(frame->data, mb_x * 16 + submb_x * 8, mb_y * 16 + submb_y * 8, 8, 8
+                                    ,frame->width, frame->height, frame->linesize, 128, 0, 255, 0);
+                            }
+                        }
+                    }else if(mb_type & (1 << 1)){
+                        // intra 16x16
+                        draw_rectangle(frame->data, mb_x * 16, mb_y * 16, 16, 16
+                            ,frame->width, frame->height, frame->linesize, 128, 0, 255, 0);
+                    }else if(mb_type & (1 << 11)){
+                        // inter skip
+                        draw_rectangle(frame->data, mb_x * 16, mb_y * 16, 16, 16
+                            ,frame->width, frame->height, frame->linesize, 200, 128, 128, 0);
+                    }else if(mb_type & ((1 <<  3) |(1 <<  4) |(1 <<  5) |(1 <<  6))){
+
+                    }
+                }
+            }
+        }
+    }
+
     return ff_filter_frame(outlink, frame);
 }
 
