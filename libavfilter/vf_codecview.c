@@ -348,7 +348,7 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *frame)
         }
     }
 
-    if (s->intra4x4 | s->intra16x16 | s->skip){
+    if (s->intra4x4 || s->intra16x16 || s->skip){
         AVFrameSideData *sd = av_frame_get_side_data(frame, AV_FRAME_DATA_MACRO_BLOCK_TYPES);
         if (sd) {
             const mb_stride = frame->width / 16 + 1;
