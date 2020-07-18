@@ -360,11 +360,11 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *frame)
                     if(mb_type & 1){
                         // intra 4x4
                         if (s->intra4x4){
-                            for (size_t submb_y = 0; submb_y < 2; submb_y++)
+                            for (size_t submb_y = 0; submb_y < 4; submb_y++)
                             {
-                                for (size_t submb_x = 0; submb_x < 2; submb_x++)
+                                for (size_t submb_x = 0; submb_x < 4; submb_x++)
                                 {
-                                    draw_rectangle(frame->data, mb_x * 16 + submb_x * 8, mb_y * 16 + submb_y * 8, 8, 8
+                                    draw_rectangle(frame->data, mb_x * 16 + submb_x * 4, mb_y * 16 + submb_y * 4, 4, 4
                                         ,frame->width, frame->height, frame->linesize, 128, 0, 255, s->intra4x4 - 1);
                                 }
                             }
