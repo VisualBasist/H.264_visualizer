@@ -52,6 +52,7 @@ typedef struct CodecViewContext {
     int hsub, vsub;
     int qp;
     int intra4x4;
+    int intra8x8;
     int intra16x16;
     int inter;
     int skip;
@@ -77,6 +78,7 @@ static const AVOption codecview_options[] = {
         CONST("pf", "P-frames", FRAME_TYPE_P, "frame_type"),
         CONST("bf", "B-frames", FRAME_TYPE_B, "frame_type"),
     { "intra4x4", "draw intra prediction 4x4", OFFSET(intra4x4), AV_OPT_TYPE_FLAGS, {.i64=0}, 0, INT_MAX, FLAGS, "rectangle_draw_type" },
+    { "intra8x8", "draw intra prediction 8x8", OFFSET(intra8x8), AV_OPT_TYPE_FLAGS, {.i64=0}, 0, INT_MAX, FLAGS, "rectangle_draw_type" },
     { "intra16x16", "draw intra prediction 16x16", OFFSET(intra16x16), AV_OPT_TYPE_FLAGS, {.i64=0}, 0, INT_MAX, FLAGS, "rectangle_draw_type" },
     { "inter", "draw inter prediction", OFFSET(inter), AV_OPT_TYPE_FLAGS, {.i64=0}, 0, INT_MAX, FLAGS, "rectangle_draw_type" },
     { "skip", "draw inter prediction", OFFSET(skip), AV_OPT_TYPE_FLAGS, {.i64=0}, 0, INT_MAX, FLAGS, "rectangle_draw_type" },
@@ -348,7 +350,7 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *frame)
         }
     }
 
-    if (s->intra4x4 || s->intra16x16 || s->skip){
+    if (s->intra4x4 || s->intra8x8 || s->intra16x16 || s->skip){
         AVFrameSideData *sd = av_frame_get_side_data(frame, AV_FRAME_DATA_MACRO_BLOCK_TYPES);
         if (sd) {
             const mb_stride = frame->width / 16 + 1;
@@ -357,7 +359,7 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *frame)
                 for (size_t mb_x = 0; mb_x < frame->width / 16.0 ; mb_x++)
                 {
                     const mb_type = ((uint32_t*)(sd->data))[mb_x + mb_y * mb_stride];
-                    if(mb_type & 1){
+                    if(mb_type == 1){
                         // intra 4x4
                         if (s->intra4x4){
                             for (size_t submb_y = 0; submb_y < 4; submb_y++)
@@ -366,6 +368,18 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *frame)
                                 {
                                     draw_rectangle(frame->data, mb_x * 16 + submb_x * 4, mb_y * 16 + submb_y * 4, 4, 4
                                         ,frame->width, frame->height, frame->linesize, 128, 0, 255, s->intra4x4 - 1);
+                                }
+                            }
+                        }
+                    }else if (mb_type == (0x01000000 | 1)){
+                        // intra 8x8 (DCT 8x8)
+                        if (s->intra8x8){
+                            for (size_t submb_y = 0; submb_y < 2; submb_y++)
+                            {
+                                for (size_t submb_x = 0; submb_x < 2; submb_x++)
+                                {
+                                    draw_rectangle(frame->data, mb_x * 16 + submb_x * 8, mb_y * 16 + submb_y * 8, 8, 8
+                                        ,frame->width, frame->height, frame->linesize, 128, 0, 255, s->intra8x8 - 1);
                                 }
                             }
                         }
