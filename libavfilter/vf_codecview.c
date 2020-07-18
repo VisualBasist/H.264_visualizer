@@ -352,9 +352,9 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *frame)
         AVFrameSideData *sd = av_frame_get_side_data(frame, AV_FRAME_DATA_MACRO_BLOCK_TYPES);
         if (sd) {
             const mb_stride = frame->width / 16 + 1;
-            for (size_t mb_y = 0; mb_y < frame->height / 16 ; mb_y++)
+            for (size_t mb_y = 0; mb_y < frame->height / 16.0 ; mb_y++)
             {
-                for (size_t mb_x = 0; mb_x < frame->width / 16 ; mb_x++)
+                for (size_t mb_x = 0; mb_x < frame->width / 16.0 ; mb_x++)
                 {
                     const mb_type = ((uint32_t*)(sd->data))[mb_x + mb_y * mb_stride];
                     if(mb_type & 1){
